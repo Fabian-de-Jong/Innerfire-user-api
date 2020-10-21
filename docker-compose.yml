@@ -1,0 +1,66 @@
+version: '3'
+services:
+
+   #Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+
+  #MySQL Service
+  db:
+    image: mysql:5.7
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: InnerFire24-7!
+      MYSQL_USER: apiuser
+      MYSQL_PASSWORD: InnerFire24-7!
+      MYSQL_DATABASE: laravelapi
+    volumes:
+      - dbdata:/var/lib/mysql/
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma
+    links:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - 8081:80
+
+#PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: innerfire-user-api
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+ 
+#Volumes
+volumes:
+  dbdata:
+    driver: local
